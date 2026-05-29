@@ -1,0 +1,6 @@
+{
+  "name": "Naver Place Diagnosis",
+  "description": "Professional Naver Place listing analysis and SEO diagnostic tool with automated AI reports.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
