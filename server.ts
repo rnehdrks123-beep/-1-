@@ -79,7 +79,7 @@ app.post("/api/diagnose", async (req, res) => {
 
     const client = getAI();
     const result = await client.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-flash-latest",
       contents: [{ parts: [{ text: prompt }] }],
       config: {
         responseMimeType: "application/json",
@@ -122,7 +122,9 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(process.cwd(), "dist");
+    // Robust path for static files in production
+    // When bundled to dist/server.cjs, __dirname is the dist folder
+    const distPath = path.resolve(__dirname);
     app.use(express.static(distPath));
     app.get("*", (req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
