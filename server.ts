@@ -79,7 +79,7 @@ app.post("/api/diagnose", async (req, res) => {
 
     const client = getAI();
     const result = await client.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "gemini-2.0-flash",
       contents: [{ parts: [{ text: prompt }] }],
       config: {
         responseMimeType: "application/json",
