@@ -30,10 +30,10 @@ export const ReportCard: React.FC<ReportCardProps> = ({ result, storeInfo }) => 
       // Wait a bit for any layout shifts or animations to settle
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      // html-to-image handles oklch and modern CSS much better than html2canvas
-      const dataUrl = await toPng(reportRef.current, {
+      // html-to-image options
+      const options = {
         quality: 1.0,
-        pixelRatio: 3,
+        pixelRatio: 2, // Slightly lower but still high quality for better stability
         backgroundColor: '#ffffff',
         style: {
           transform: 'none',
@@ -42,17 +42,15 @@ export const ReportCard: React.FC<ReportCardProps> = ({ result, storeInfo }) => 
           margin: '0',
           padding: '0',
           boxShadow: 'none',
-        },
-        filter: (node) => {
-          // You can exclude elements here if needed
-          return true;
         }
-      });
+      };
+
+      const dataUrl = await toPng(reportRef.current, options);
       
       const fileName = `${storeInfo.placeName}_진단리포트.png`;
 
-      // Try File System Access API for "Save As" experience (mostly Chrome/Edge/Opera)
-      if ('showSaveFilePicker' in window) {
+      // Try File System Access API
+      if (typeof window !== 'undefined' && 'showSaveFilePicker' in window) {
         try {
           const fetchRes = await fetch(dataUrl);
           const blob = await fetchRes.blob();
@@ -70,12 +68,11 @@ export const ReportCard: React.FC<ReportCardProps> = ({ result, storeInfo }) => 
           setIsCapturing(false);
           return;
         } catch (err: any) {
-          // User cancelled or browser blocked it, fallback to normal download
           if (err.name === 'AbortError') {
              setIsCapturing(false);
              return;
           }
-          console.warn("File System Access API failed, falling back to anchor download", err);
+          console.warn("File System Access API failed, falling back to standard download", err);
         }
       }
 

@@ -78,34 +78,52 @@ app.post("/api/diagnose", async (req, res) => {
     `;
 
     const client = getAI();
-    const result = await client.models.generateContent({
-      model: "gemini-flash-latest",
-      contents: [{ parts: [{ text: prompt }] }],
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            seoScore: { type: Type.STRING },
-            seoRank: { type: Type.STRING },
-            problem: { type: Type.STRING },
-            effect: { type: Type.STRING },
-            competitorCount: { type: Type.STRING },
-            competition: { type: Type.STRING },
-            reviewProblem: { type: Type.STRING }
-          },
-          required: ["seoScore", "seoRank", "problem", "effect", "competitorCount", "competition", "reviewProblem"]
+    try {
+      const result = await client.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: [{ parts: [{ text: prompt }] }],
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              seoScore: { type: Type.STRING },
+              seoRank: { type: Type.STRING },
+              problem: { type: Type.STRING },
+              effect: { type: Type.STRING },
+              competitorCount: { type: Type.STRING },
+              competition: { type: Type.STRING },
+              reviewProblem: { type: Type.STRING }
+            },
+            required: ["seoScore", "seoRank", "problem", "effect", "competitorCount", "competition", "reviewProblem"]
+          }
         }
+      });
+
+      const responseText = result.text;
+      if (!responseText) {
+        throw new Error("AI 모델이 결과물을 생성하지 못했습니다.");
       }
-    });
 
-    const responseText = result.text;
-    if (!responseText) {
-      throw new Error("No response from AI model");
+      const diagnosis = JSON.parse(responseText);
+      res.json(diagnosis);
+    } catch (apiError: any) {
+      console.error("Gemini API Error details:", apiError);
+      
+      // Handle the "high demand" 503 error gracefully
+      if (apiError.status === "UNAVAILABLE" || apiError.code === 503) {
+        res.status(503).json({ 
+          error: "현재 이용자가 많아 지연되고 있습니다.", 
+          detail: "잠시 후 다시 시도해주세요. (503)" 
+        });
+        return;
+      }
+      
+      res.status(500).json({ 
+        error: apiError.message || "Failed to generate diagnosis",
+        detail: apiError.status || apiError.code
+      });
     }
-
-    const diagnosis = JSON.parse(responseText);
-    res.json(diagnosis);
 
   } catch (error: any) {
     console.error("Diagnosis Error:", error);
@@ -123,8 +141,7 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     // Robust path for static files in production
-    // When bundled to dist/server.cjs, __dirname is the dist folder
-    const distPath = path.resolve(__dirname);
+    const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
     app.get("*", (req, res) => {
       res.sendFile(path.join(distPath, "index.html"));

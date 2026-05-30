@@ -33,16 +33,18 @@ export default function App() {
         body: JSON.stringify(data),
       });
 
-      if (!response.ok) {
+    if (!response.ok) {
         let errorMessage = '진단 중 오류가 발생했습니다.';
+        let detail = '';
         try {
           const errorData = await response.json();
           errorMessage = errorData.error || errorMessage;
+          detail = errorData.detail || '';
         } catch (e) {
           // If not JSON, use status text
           errorMessage = `${response.status} ${response.statusText}`;
         }
-        throw new Error(errorMessage);
+        throw new Error(detail ? `${errorMessage} (${detail})` : errorMessage);
       }
 
       const diagnosis = await response.json();
